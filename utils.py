@@ -23,7 +23,7 @@ def file_reader(filename, delimiter=' '):
         # Open filename using open method
         with open(filename, newline='') as f_input:
             data = [list(map(float, row)) for row in csv.reader(f_input)]
-            print(data)
+            # print(data)
     except FileNotFoundError:
         print('FileNotFoundError: file "%s" does not exist.' % filename, file=sys.stderr)
         # Exit code 1
