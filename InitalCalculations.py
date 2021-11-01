@@ -34,9 +34,9 @@ def main():
     CherryToVenusRatio = ut.get_ratio(mCherrydata, mVenusdata)
     
     #Testing Scripts
-    print(mCherryDerivative)
-    print(mVenusDerivative)
-    print(CherryToVenusRatio)
+    # print(mCherryDerivative)
+    # print(mVenusDerivative)
+    # print(CherryToVenusRatio)
     
 def input_parser():
     '''
