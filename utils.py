@@ -46,7 +46,8 @@ def get_derivative(data):
     for line in data:
         cellLineDiff = np.diff(line,1)
         derivative.append(cellLineDiff)
-    return derivative
+    derivativeArray=np.array([np.array(xi) for xi in derivative])
+    return derivativeArray
 
 def get_ratio(cherry, venus):
     '''
@@ -75,8 +76,8 @@ def get_ratio(cherry, venus):
             pointRatio = c/v
             # Add ratio value to main data file
             ratio[line][point] = pointRatio
-        # Add list to main ratio list
-    return ratio
+    ratioArray=np.array([np.array(xi) for xi in ratio])
+    return ratioArray
     
 
 #Testing Scripts
