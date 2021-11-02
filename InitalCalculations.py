@@ -32,7 +32,7 @@ def main():
     mVenusDerivative = ut.get_derivative(mVenusdata)
     #Find ratio between mCherry and mVenus for each cell line
     CherryToVenusRatio = ut.get_ratio(mCherrydata, mVenusdata)
-    
+    media_frame = args.mediaframe
     #Testing Scripts
     # print(mCherryDerivative)
     # print(mVenusDerivative)
@@ -66,12 +66,20 @@ def input_parser():
         action='store',
         required=False,
         help='This string here is the mVenus data filename')
+    parser.add_argument(
+        '-t', '--mediaframe'
+        typ=int,
+        action-'store',
+        required=False,
+        help='The frame at which the media was changed goes here.')
     counter_inputs = parser.parse_args()
     # Exception Handling of input errors
-    if (counter_inputs.mVenusfilename and counter_inputs.mCherryfilename):
+    if (counter_inputs.mVenusfilename and counter_inputs.mCherryfilename
+       and counterinputs.mediaframe):
         allcommands = True
         anycommands = True
-    elif (counter_inputs.mVenusfilename or counter_inputs.mCherryfilename):
+    elif (counter_inputs.mVenusfilename or counter_inputs.mCherryfilename
+         or counter_inputs.mediaframe):
         allcommands = False
         anycommands = True
     else:
@@ -89,6 +97,9 @@ def input_parser():
             if counter_inputs.mVenusfilename is None:
                 raise AttributeError('There is no value for mVenus filename or \
                 config file')
+            if counter_inputs.mediaframe is None:
+                raise AttributeError('There is no value for media frame or \
+                config file')
     # use config file instead
     elif counter_inputs.configfile:
         if anycommands is False:
@@ -98,6 +109,8 @@ def input_parser():
             counter_inputs.mCherryfilename = config['FILES']['mCherry']
             # read in mVenus filename
             counter_inputs.mVenusfilename = config['FILES']['mVenus']
+            # read in the media change frame
+            counter_inputs.mediaframe = config['PARAMETERS']['media_chage_frame']
         else:
             # Check for which value(s) were extras
             if counter_inputs.mCherryfilename:
@@ -105,6 +118,9 @@ def input_parser():
                 were entered')
             if counter_inputs.mVenusfilename:
                 raise AttributeError('Both a config file and mVenus filename \
+                were entered')
+            if counter_inputs.mediaframe:
+                raise AttributeError('Both a config file and media change frame \
                 were entered')
     return counter_inputs
 
