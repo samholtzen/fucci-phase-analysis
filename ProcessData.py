@@ -141,3 +141,5 @@ def media_timing(cell_phases, media_frame):
     
     return cell_phase_at_change, time_in_phase_at_change
 
+if __name__ == '__main__':
+    main()
