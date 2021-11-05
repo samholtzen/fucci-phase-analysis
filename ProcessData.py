@@ -95,6 +95,49 @@ def count_phase_frames(cell_phases):
     
 
 def tpa_timing(cell_phases, media_frame):
+    '''
+    Purpose:
+        To determine at what point in a cell cycle phase a cell was in old
+        media before being changed to the new one
+        
     
+    Inputs:
+        A character array containing rows corresponding to single cell traces
+        with each column represneting a frame, and each element containing
+        a cell's cell cycle phase at that particular frame
+        
+        An int corresponding to the frame at which the media was changed
+
+
+    Outputs:
+        Two lists of lists, first containing the phase at which the
+        media was changed, the second containing how long it was in that phase
+        before the media was changed
+    '''
+    cell_phase_at_change = []
+    time_in_phase_at_change = []
     
+    for cell in cell_phases:
+        
+        time_in_phase = 1
+        
+        phase_at_change = cell[media_frame-1]
+        frame_to_check = media_frame-2
+        cell_phase_at_change.append(phase_at_change)
+        
+        while phase_before == phase_at_change:
+            
+            if phase_before > 2:
+                
+                phase_before = cell[frame_to_check]
+                time_in_phase += 1
+                frame_to_check -= 1
+                
+            else:
+                
+                break
+        
+        time_in_phase_at_change.append(time_in_phase)
     
+    return cell_phase_at_change, time_in_phase_at_change
+
