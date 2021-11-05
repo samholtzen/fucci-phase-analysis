@@ -94,7 +94,7 @@ def count_phase_frames(cell_phases):
     return all_G1_lengths, all_S_lengths, all_G2_lengths
     
 
-def tpa_timing(cell_phases, media_frame):
+def media_timing(cell_phases, media_frame):
     '''
     Purpose:
         To determine at what point in a cell cycle phase a cell was in old
