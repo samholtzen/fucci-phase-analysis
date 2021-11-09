@@ -6,7 +6,9 @@ import pandas as pd
 
 '''
     utils provides definitions to take in file,
-    turn it into a list of lists, __________
+    turn it into a list of lists, determine phases
+    and conduct calculations on the phases to export
+    for plotting.
 '''
 
 

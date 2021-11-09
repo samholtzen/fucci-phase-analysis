@@ -1,4 +1,3 @@
-import numpy as np
 import utils as ut
 
 
@@ -36,10 +35,7 @@ def main():
     #Get the media_change frame from the input
     media_frame = args.mediaframe
     
-    #Testing Scripts
-    # print(mCherryDerivative)
-    # print(mVenusDerivative)
-    # print(CherryToVenusRatio)
+    
     
     
 
