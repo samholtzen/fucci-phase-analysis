@@ -9,6 +9,8 @@ import pandas as pd
     turn it into a list of lists, __________
 '''
 
+
+
 def input_parser():
     '''
     This function processes/parses commandline
@@ -16,6 +18,7 @@ def input_parser():
     '''
     parser = argp.ArgumentParser(description="Counter Function")
     # input argument ‘c’ is configfile (string)
+    
     parser.add_argument(
         '-c', '--configfile',
         type=str,
@@ -23,6 +26,7 @@ def input_parser():
         action='store',
         required=False,
         help='This is a optional configfile')
+    
     # input argument ‘a’ is mCherry filename (string)
     parser.add_argument(
         '-a', '--mCherryfilename',
@@ -30,6 +34,7 @@ def input_parser():
         action='store',
         required=False,
         help='This string here is the mCherry data filename')
+    
     # input argument ‘b’ is mVenus filename (string)
     parser.add_argument(
         '-b', '--mVenusfilename',
@@ -37,12 +42,14 @@ def input_parser():
         action='store',
         required=False,
         help='This string here is the mVenus data filename')
+    
     parser.add_argument(
-        '-t', '--mediaframe'
-        typ=int,
-        action-'store',
+        '-t', '--mediaframe',
+        type=int,
+        action='store',
         required=False,
-        help='The frame at which the media was changed goes here.')
+        help='The frame at which the media was changed goes here')
+    
     counter_inputs = parser.parse_args()
     # Exception Handling of input errors
     if (counter_inputs.mVenusfilename and counter_inputs.mCherryfilename
@@ -200,6 +207,7 @@ def media_timing(cell_phases, media_frame):
         phase_at_change = cell[media_frame-1]
         frame_to_check = media_frame-2
         cell_phase_at_change.append(phase_at_change)
+        phase_before = phase_at_change
         
         while phase_before == phase_at_change:
             
@@ -218,9 +226,8 @@ def media_timing(cell_phases, media_frame):
     return cell_phase_at_change, time_in_phase_at_change
 
 
-def get_daughter_stats(cell_phase_at_change, time_in_phase_at_change, 
-                   all_G1_lengths, all_G2_lengths, all_S_lengths):
-        '''
+def get_daughter_stats(cell_phase_at_change, time_in_phase_at_change, all_G1_lengths, all_G2_lengths, all_S_lengths):
+    '''
     Purpose:
         To bin cells based on their fate and correlate this to their time in
         treatment media.

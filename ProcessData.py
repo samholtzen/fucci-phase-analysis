@@ -19,16 +19,23 @@ def main():
 
     # Call input_parser to parse commandline inputs
     args = input_parser()
+    
     # Get data from file using file_reader
     mCherrydata = ut.file_reader(args.mCherryfilename)
+    
     # Get data from file using file_reader
     mVenusdata = ut.file_reader(args.mVenusfilename)
+    
     #Find derivative (rate of change) for each cell line
     mCherryDerivative = ut.get_derivative(mCherrydata)
     mVenusDerivative = ut.get_derivative(mVenusdata)
+    
     #Find ratio between mCherry and mVenus for each cell line
     CherryToVenusRatio = ut.get_ratio(mCherrydata, mVenusdata)
+    
+    #Get the media_change frame from the input
     media_frame = args.mediaframe
+    
     #Testing Scripts
     # print(mCherryDerivative)
     # print(mVenusDerivative)
