@@ -176,6 +176,66 @@ def get_ratio(cherry, venus):
     ratioArray=np.array([np.array(xi) for xi in ratio])
     return ratioArray
     
+    
+def count_phase_frames(cell_phases, media_frame):
+    '''
+    Purpose:
+        To count the number of frames a cell spends in each phase after
+        changing the media.
+        
+    
+    Inputs:
+        A character array containing rows corresponding to single cell traces
+        with each column represneting a frame, and each element containing
+        a cell's cell cycle phase at that particular frame
+        
+        An integer represneitng frame at which the media was changed on 
+        these cells
+
+
+    Outputs:
+        Three lists of lists, containing the time spent in each phase in the
+        sublist, with each element in the larger list corresponding to the
+        tracks
+    '''
+    all_G1_lengths = []
+    all_S_lengths = []
+    all_G2_lengths = []
+    
+    for cell in cell_phases:
+        
+        # Convert the numpy array to one long string
+        cellstr_temp = ''.join(cell_phases[cell])
+        
+        # Only look at cells after the media change
+        cellstr_temp = cellstr_temp[media_frame:]
+        
+        # Split the array into individual cell traces by split string at 'M'
+        cell_split = cellstr_temp.split('M')
+        
+        
+        G1_lengths = []
+        S_lengths = []
+        G2_lengths = []
+        
+        for i in cell_phases:
+            
+            # Loop through and find the number of instances of "G1"
+            G1_length = cell_split[i].count('G1')
+            G1_lengths.append(G1_length/5)
+            
+            S_length = cell_split[i].count('S')
+            S_lengths.append(S_length/5)
+            
+            G2_length = cell_split[i].count('G2')
+            G2_lengths.append(G2_length/5)
+        
+    all_G1_lengths.append(G1_lengths)
+    all_S_lengths.append(S_lengths)
+    all_G2_lengths.append(G2_lengths)
+    
+    return all_G1_lengths, all_S_lengths, all_G2_lengths
+
 
 def media_timing(cell_phases, media_frame):
     '''
