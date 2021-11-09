@@ -205,25 +205,25 @@ def count_phase_frames(cell_phases, media_frame):
     for cell in cell_phases:
         
         # Convert the numpy array to one long string
-        cellstr_temp = ''.join(cell_phases[cell])
-        
+        cellstr_temp = ''.join(cell)
+
         # Only look at cells after the media change
         cellstr_temp = cellstr_temp[media_frame:]
         
         # Split the array into individual cell traces by split string at 'M'
         cell_split = cellstr_temp.split('M')
         
-        
         G1_lengths = []
         S_lengths = []
         G2_lengths = []
         
-        for i in cell_phases:
+        for i in range(len(cell_split)):
             
             # Loop through and find the number of instances of "G1"
             G1_length = cell_split[i].count('G1')
             G1_lengths.append(G1_length/5)
             
+            # Same for S and G2
             S_length = cell_split[i].count('S')
             S_lengths.append(S_length/5)
             
@@ -323,22 +323,34 @@ def get_daughter_stats(cell_phase_at_change, time_in_phase_at_change, all_G1_len
         
         if phase_temp == 'G1':
             
-            G1_temp = all_G1_lengths[1]
             S_temp = all_S_lengths[0]
             G2_temp = all_G2_lengths[0]
+            
+            if len(all_G1_lengths) > 1:
+                G1_temp = all_G1_lengths[1]
+            else:
+                G1_temp = all_G1_lengths[0]
+                    
             
         elif phase_temp == 'S':
             
             G1_temp = all_G1_lengths[0]
-            S_temp = all_S_lengths[1]
             G2_temp = all_G2_lengths[0]
+            
+            if len(all_S_lengths) > 1:
+                S_temp = all_S_lengths[1]
+            else:
+                S_temp = all_S_lengths[0]
             
         elif phase_temp == 'G2':
             
             G1_temp = all_G1_lengths[0]
             S_temp = all_S_lengths[0]
-            G2_temp = all_G2_lengths[1]
             
+            if len(all_G2_lengths) > 1:
+                G2_temp = all_G2_lengths[1]
+            else:
+                G2_temp = all_G2_lengths[0]            
             
         cell_temp = [phase_temp,time_temp,G1_temp,S_temp,G2_temp]
         
