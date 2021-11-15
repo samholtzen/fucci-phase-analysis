@@ -18,7 +18,7 @@ def create_flo_ratio_list(flo_expression):
     flo_ratio_list = []
     for flo_list in flo_expression:
         max_value = find_max_value(flo_list)
-        flo_ratio_list.append(create_flo_ratio_values(flo_list,max_value))
+        flo_ratio_list.append(create_flo_ratio_values(flo_list, max_value))
     return flo_ratio_list
 
 
@@ -34,7 +34,7 @@ def find_mitosis_event(flo_expression_red, flo_expression_green):
 
     for i in range(max_len):
         for j in range(len(flo_ratio_red_list[i])):
-            if flo_ratio_red_list[i][j] > 0.5 and flo_ratio_green_list[i][j] <= 0.5:
+            if flo_ratio_red_list[i][j] > 0.05 and flo_ratio_green_list[i][j] <= 0.05:
                 position_mitosis_list.append([i, j])
                 #print("position: " + str(i) + " , " + str(j))
                 #print("red_ratio_value: " + str(flo_ratio_red_list[i][j]))

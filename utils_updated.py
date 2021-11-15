@@ -1,7 +1,6 @@
 import csv
 import sys
 import numpy as np
-import matplotlib as mp
 import pandas as pd
 import argparse as argp
 import configparser as conp
@@ -110,7 +109,7 @@ def file_reader(filename, delimiter=' '):
 
             Parameters:
                     filename (filepath): File path of file
-                    delimiier (string): String to sperate values within line
+                    delimiter (string): String to sperate values within line
 
             Returns:
                     data_list(list of lists): List of values within each line.
