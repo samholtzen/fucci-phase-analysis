@@ -1,25 +1,27 @@
 import csv
 import sys
 import numpy as np
-import matplotlib as mp
 import pandas as pd
+import argparse as argp
 
-'''
+"""
     utils provides definitions to take in file,
     turn it into a list of lists, determine phases
     and conduct calculations on the phases to export
     for plotting.
-'''
+"""
 
 
 
 def input_parser():
-    '''
+
+    """
     This function processes/parses commandline
     arguments and input parsed files.
-    '''
+    """
     parser = argp.ArgumentParser(description="Counter Function")
-    # input argument ‘c’ is configfile (string)
+
+    # input argument "c" is configfile (string)
     
     parser.add_argument(
         '-c', '--configfile',
@@ -29,7 +31,7 @@ def input_parser():
         required=False,
         help='This is a optional configfile')
     
-    # input argument ‘a’ is mCherry filename (string)
+    # input argument "a" is mCherry filename (string)
     parser.add_argument(
         '-a', '--mCherryfilename',
         type=str,
@@ -37,7 +39,7 @@ def input_parser():
         required=False,
         help='This string here is the mCherry data filename')
     
-    # input argument ‘b’ is mVenus filename (string)
+    # input argument "b" is mVenus filename (string)
     parser.add_argument(
         '-b', '--mVenusfilename',
         type=str,
@@ -107,7 +109,7 @@ def input_parser():
 
 
 def file_reader(filename, delimiter=' '):
-    '''
+    """
     Returns list of each line made up of lists of values.
 
             Parameters:
@@ -116,7 +118,7 @@ def file_reader(filename, delimiter=' '):
 
             Returns:
                     data_list(list of lists): List of values within each line.
-    '''
+    """
     # Exception Handling for opening invalid file
     try:
         # Open filename using open method
@@ -124,21 +126,21 @@ def file_reader(filename, delimiter=' '):
             data = [list(map(float, row)) for row in csv.reader(f_input)]
             # print(data)
     except FileNotFoundError:
-        print('FileNotFoundError: file "%s" does not exist.' % filename, file=sys.stderr)
+        print("FileNotFoundError: file does not exist.")
         # Exit code 1
         sys.exit(1)
     return data
 
 def get_derivative(data):
-    '''
+    """
     Returns list of each line made up of lists of values.
 
             Parameters:
                     data(list of lists): list of floirent values in cell line.
 
             Returns:
-                    dervivative(list of arrays): Derivatives at each point in each cell line. 
-    '''
+                    dervivative(list of arrays): Derivatives at each point in each cell line.
+    """
     # Initialize
     derivative = []
     # loop through all cell lines

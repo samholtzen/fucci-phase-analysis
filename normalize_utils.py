@@ -34,7 +34,8 @@ def find_mitosis_event(flo_expression_red, flo_expression_green):
 
     for i in range(max_len):
         for j in range(len(flo_ratio_red_list[i])):
-            if flo_ratio_red_list[i][j] > 0.05 and flo_ratio_green_list[i][j] <= 0.05:
+            if flo_ratio_red_list[i][j] > 0.05 \
+                    and flo_ratio_green_list[i][j] <= 0.05:
                 position_mitosis_list.append([i, j])
                 #print("position: " + str(i) + " , " + str(j))
                 #print("red_ratio_value: " + str(flo_ratio_red_list[i][j]))

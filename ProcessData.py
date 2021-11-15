@@ -7,7 +7,7 @@ def main():
 This function runs main arguments.
 
 Parameters
-—---------
+---------
 a : str
 First argument is the filename/path to mCherry file
 B : str
