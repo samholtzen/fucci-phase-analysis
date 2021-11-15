@@ -3,7 +3,7 @@ import sys
 import numpy as np
 import pandas as pd
 import argparse as argp
-
+import configparser as conp
 """
     utils provides definitions to take in file,
     turn it into a list of lists, determine phases
@@ -92,7 +92,7 @@ def input_parser():
             # read in mVenus filename
             counter_inputs.mVenusfilename = config['FILES']['mVenus']
             # read in the media change frame
-            counter_inputs.mediaframe = config['PARAMETERS']['media_chage_frame']
+            counter_inputs.mediaframe = config['PARAMETERS']['media_change_frame']
         else:
             # Check for which value(s) were extras
             if counter_inputs.mCherryfilename:

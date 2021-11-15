@@ -1,5 +1,5 @@
-import utils as ut
-import normalize_utils
+import utils_updated as ut
+import normalize_utils as nutils
 
 
 def main():
@@ -25,7 +25,7 @@ Second argument is the filename/path to mVenus file
     mVenusdata = ut.file_reader(args.mVenusfilename)
     #print(len(mVenusdata))
 
-    normalize_utils.find_mitosis_event(mCherrydata, mVenusdata)
+    nutils.find_mitosis_event(mCherrydata, mVenusdata)
 
     #Find derivative (rate of change) for each cell line
     mCherryDerivative = ut.get_derivative(mCherrydata)
