@@ -57,7 +57,7 @@ def input_parser():
     counter_inputs = parser.parse_args()
     # Exception Handling of input errors
     if (counter_inputs.mVenusfilename and counter_inputs.mCherryfilename
-       and counterinputs.mediaframe):
+       and counter_inputs.mediaframe):
         allcommands = True
         anycommands = True
     elif (counter_inputs.mVenusfilename or counter_inputs.mCherryfilename
@@ -189,11 +189,11 @@ def count_phase_frames(cell_phases, media_frame):
         
     
     Inputs:
-        A character array containing rows corresponding to single cell traces
-        with each column represneting a frame, and each element containing
+        A numpy character array containing rows corresponding to single cell traces
+        with each column representing a frame, and each element containing
         a cell's cell cycle phase at that particular frame
         
-        An integer represneitng frame at which the media was changed on 
+        An integer representing frame at which the media was changed on
         these cells
 
 
@@ -234,9 +234,9 @@ def count_phase_frames(cell_phases, media_frame):
             G2_length = cell_split[i].count('G2')
             G2_lengths.append(G2_length/5)
         
-    all_G1_lengths.append(G1_lengths)
-    all_S_lengths.append(S_lengths)
-    all_G2_lengths.append(G2_lengths)
+        all_G1_lengths.append(G1_lengths)
+        all_S_lengths.append(S_lengths)
+        all_G2_lengths.append(G2_lengths)
     
     return all_G1_lengths, all_S_lengths, all_G2_lengths
 
@@ -249,8 +249,8 @@ def media_timing(cell_phases, media_frame):
         
     
     Inputs:
-        A character array containing rows corresponding to single cell traces
-        with each column represneting a frame, and each element containing
+        A numpy character array containing rows corresponding to single cell traces
+        with each column representing a frame, and each element containing
         a cell's cell cycle phase at that particular frame
         
         An int corresponding to the frame at which the media was changed
@@ -313,7 +313,7 @@ def get_daughter_stats(cell_phase_at_change, time_in_phase_at_change, all_G1_len
         column 1 is the phase of the cell at media change
         column 2 is frames into the phase the cell was before media change
         column 3 is how long the daughter G1 is
-        colum 4 is how long the daughter S is
+        column 4 is how long the daughter S is
         column 5 is how long the daughter G2 is
         
     '''
@@ -384,7 +384,7 @@ def convert_phase_to_time(daughter_cell_stats):
     
     daughter_cell_to_plot = []
     
-    for daughters in all_cell_stats:
+    for daughters in daughter_cell_stats:
         
         phase = daughters[0]
         time = daughters[1]
