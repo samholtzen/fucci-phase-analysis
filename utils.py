@@ -327,36 +327,36 @@ def get_daughter_stats(cell_phase_at_change, time_in_phase_at_change, all_G1_len
         
         if phase_temp == 'G1':
             
-            S_temp = all_S_lengths[0]
-            G2_temp = all_G2_lengths[0]
+            S_temp = all_S_lengths[i][0]
+            G2_temp = all_G2_lengths[i][0]
             
-            if len(all_G1_lengths) > 1:
-                G1_temp = all_G1_lengths[1]
+            if len(all_G1_lengths[i]) > 1:
+                G1_temp = all_G1_lengths[i][1]
             else:
-                G1_temp = all_G1_lengths[0]
+                G1_temp = all_G1_lengths[i][0]
                     
             
         elif phase_temp == 'S':
             
-            G1_temp = all_G1_lengths[0]
-            G2_temp = all_G2_lengths[0]
+            G1_temp = all_G1_lengths[i][0]
+            G2_temp = all_G2_lengths[i][0]
             
-            if len(all_S_lengths) > 1:
-                S_temp = all_S_lengths[1]
+            if len(all_S_lengths[i]) > 1:
+                S_temp = all_S_lengths[i][1]
             else:
-                S_temp = all_S_lengths[0]
+                S_temp = all_S_lengths[i][0]
             
         elif phase_temp == 'G2':
             
-            G1_temp = all_G1_lengths[0]
-            S_temp = all_S_lengths[0]
+            G1_temp = all_G1_lengths[i][0]
+            S_temp = all_S_lengths[i][0]
             
-            if len(all_G2_lengths) > 1:
-                G2_temp = all_G2_lengths[1]
+            if len(all_G2_lengths[i]) > 1:
+                G2_temp = all_G2_lengths[i][1]
             else:
-                G2_temp = all_G2_lengths[0]            
+                G2_temp = all_G2_lengths[i][0]
             
-        cell_temp = [phase_temp,time_temp,G1_temp,S_temp,G2_temp]
+        cell_temp = [phase_temp,time_temp, G1_temp, S_temp, G2_temp]
         
         daughter_cell_stats.append(cell_temp)
         
@@ -397,7 +397,7 @@ def convert_phase_to_time(daughter_cell_stats):
         elif phase == 'G2':
             phase_out = time + 9
         
-        time_convert_temp = [phase_out,lengths]
+        time_convert_temp = [phase_out, lengths]
         
         daughter_cell_to_plot.append(time_convert_temp)
         
