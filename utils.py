@@ -468,47 +468,6 @@ def get_daughter_stats(cell_phase_at_change, time_in_phase_at_change, all_G1_len
         
     return daughter_cell_stats
 
-def convert_phase_to_time(daughter_cell_stats):
-    '''
-    Purpose:
-        To convert Phase and Time into Phase into a pseudotime for plotting
-        
-    
-    Inputs:
-        All of the cell stats, which houses the phase, the 
-
-
-    Outputs:
-        Returning an n x 4 array, with each row corresponding to a cell
-        column 1 is the time into the cell cycle a cell is at
-        the time of media change
-        
-        column 2 is how long the daughter G1 is 
-        column 3 is how long the daughter S is
-        column 4 is how long the daughter G2 is
-    '''
-    
-    daughter_cell_to_plot = []
-    
-    for daughters in daughter_cell_stats:
-        
-        phase = daughters[0]
-        time = daughters[1]
-        lengths = daughters[2:]
-        
-        if phase == 'G1':
-            phase_out = time
-        elif phase == 'S':
-            phase_out = time + 4
-        elif phase == 'G2':
-            phase_out = time + 9
-        
-        time_convert_temp = [phase_out, lengths]
-        
-        daughter_cell_to_plot.append(time_convert_temp)
-        
-            
-    return daughter_cell_to_plot
 
 
 def write_list_csv(daughter_cell_stats):
