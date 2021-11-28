@@ -211,18 +211,16 @@ def mitosis_detection(current_venus):
 
     Args:
 
-        mVenus: a list of lists whose columns are mVenus fluorescent values of
-        single frames and whose rows are single cells
+        mVenus: a list whose elements are mVenus fluorescent values of
+        single frames
 
-    Returns: a list of lists containing all mitosis events of a single track
+    Returns: a list containing all mitosis events of a single track
 
     """
-    mitosis_events = []
-
     # Find a random track for testing this
     # rand_track = random.randint(0, len(mVenus))
 
-    # Convert to a numpy array
+    #
     norm_intensity = normalize_signals(current_venus)
 
     diff_intensity = np.diff(norm_intensity) * -1
@@ -230,9 +228,8 @@ def mitosis_detection(current_venus):
     mitoses, _ = scisignal.find_peaks(diff_intensity, distance=50, prominence=0.05)
 
     mitoses = list(mitoses)
-    mitosis_events.append(mitoses)
 
-    return mitosis_events
+    return mitoses
 
 
 def assign_phase_to_frame(mCherry, mVenus):
@@ -307,6 +304,7 @@ def count_phase_frames(cell_phases, media_frame):
         sublist, with each element in the larger list corresponding to the
         tracks
     """
+
     all_G1_lengths = []
     all_S_lengths = []
     all_G2_lengths = []
@@ -316,7 +314,7 @@ def count_phase_frames(cell_phases, media_frame):
         # Convert the numpy array to one long string
         cellstr_temp = ''.join(cell)
 
-        # Only look at cells after the media change
+        # Only look at values after the media change
         cellstr_temp = cellstr_temp[media_frame:]
         
         # Split the array into individual cell traces by split string at 'M'
@@ -347,17 +345,18 @@ def count_phase_frames(cell_phases, media_frame):
 
 
 def media_timing(cell_phases, media_frame):
-    '''
+
+    """
     Purpose:
         To determine at what point in a cell cycle phase a cell was in old
         media before being changed to the new one
-        
-    
+
+
     Inputs:
         A numpy character array containing rows corresponding to single cell traces
         with each column representing a frame, and each element containing
         a cell's cell cycle phase at that particular frame
-        
+
         An int corresponding to the frame at which the media was changed
 
 
@@ -365,7 +364,9 @@ def media_timing(cell_phases, media_frame):
         Two lists of lists, first containing the phase at which the
         media was changed, the second containing how long it was in that phase
         before the media was changed
-    '''
+
+    """
+
     cell_phase_at_change = []
     time_in_phase_at_change = []
     
