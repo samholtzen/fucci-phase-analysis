@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 import argparse as argp
 import configparser as conp
+import scipy.signal as scisignal
 """
     utils provides definitions to take in file,
     turn it into a list of lists, determine phases
@@ -145,7 +146,7 @@ def get_derivative(data):
     derivative = []
     # loop through all cell lines
     for line in data:
-        cellLineDiff = np.diff(line,1)
+        cellLineDiff = np.diff(line, 1)
         derivative.append(cellLineDiff)
     derivativeArray=np.array([np.array(xi) for xi in derivative])
     return derivativeArray
@@ -155,8 +156,8 @@ def get_ratio(cherry, venus):
     Returns list of each line made up of lists of values.
 
             Parameters:
-                    cherry(list of lists): list of floirent values in cell line.
-                    venus(list of lists): list of floirent values in cell line.
+                    cherry(list of lists): list of fluorescent values in cell line.
+                    venus(list of lists): list of fluorescent values in cell line.
 
             Returns:
                     ratio(list of lists): List of ratios for each cell line.
@@ -179,20 +180,124 @@ def get_ratio(cherry, venus):
             ratio[line][point] = pointRatio
     ratioArray=np.array([np.array(xi) for xi in ratio])
     return ratioArray
-    
-    
+
+def normalize_signals(data):
+
+    """
+
+    Args:
+        data: a list containing fluorescence values to be normalized
+
+    Returns:
+        norm_data: a list containing data spanning [0,1] corresponding
+        to normalized fluorescence intensity
+
+    """
+
+    # convert list to numpy array
+    data_np = np.array(data)
+    max_data = data_np.max()
+    min_data = data_np.min()
+
+    norm_data = np.array([(x - min_data) / (max_data - min_data)
+                               for x in data_np])
+
+    return norm_data
+
+
+def mitosis_detection(current_venus):
+
+    """
+
+    Args:
+
+        mVenus: a list of lists whose columns are mVenus fluorescent values of
+        single frames and whose rows are single cells
+
+    Returns: a list of lists containing all mitosis events of a single track
+
+    """
+    mitosis_events = []
+
+    # Find a random track for testing this
+    # rand_track = random.randint(0, len(mVenus))
+
+    # Convert to a numpy array
+    norm_intensity = normalize_signals(current_venus)
+
+    diff_intensity = np.diff(norm_intensity) * -1
+
+    mitoses, _ = scisignal.find_peaks(diff_intensity, distance=50, prominence=0.05)
+
+    mitoses = list(mitoses)
+    mitosis_events.append(mitoses)
+
+    return mitosis_events
+
+
+def assign_phase_to_frame(mCherry, mVenus):
+    """
+
+    Args:
+        mCherry: list of lists containing fluorescence intensity values mCherry
+        mVenus: list of lists containing fluorescence intensity values mVenus
+
+    Returns:
+        phase_string_array: numpy string array containing the following --
+            'S' - corresponding to when a cell is in S-phase
+            'G1' - corresponding to when a cell is in G1-phase
+            'G2' - corresponding to when a cell is in G2-Phase
+            'M' - corresponding to when a cell is in Mitosis
+
+    """
+    phase_string_array = []
+
+    for track in range(len(mCherry)):
+
+        track_phases = []
+
+        cherry_norm = normalize_signals(mCherry[track])
+        venus_norm = normalize_signals(mVenus[track])
+        mitoses = mitosis_detection(mVenus[track])
+
+        cherry_on = cherry_norm > 0.1
+        venus_on = venus_norm > 0.1
+
+        for frame in range(len(cherry_on)):
+
+            if frame in mitoses:
+                track_phases.append('M')
+
+            elif cherry_on[frame] and venus_on[frame]:
+                track_phases.append('G2')
+
+            elif cherry_on[frame] and not venus_on[frame]:
+                track_phases.append('G1')
+
+            elif venus_on[frame] and not cherry_on[frame]:
+                track_phases.append('S')
+
+            else:
+                track_phases.append('NA')
+
+    phase_string_array.append(track_phases)
+
+    return phase_string_array
+
+
 def count_phase_frames(cell_phases, media_frame):
-    '''
+
+    """
     Purpose:
         To count the number of frames a cell spends in each phase after
         changing the media.
-        
-    
+
+
     Inputs:
         A numpy character array containing rows corresponding to single cell traces
         with each column representing a frame, and each element containing
         a cell's cell cycle phase at that particular frame
-        
+
         An integer representing frame at which the media was changed on
         these cells
 
@@ -201,7 +306,7 @@ def count_phase_frames(cell_phases, media_frame):
         Three lists of lists, containing the time spent in each phase in the
         sublist, with each element in the larger list corresponding to the
         tracks
-    '''
+    """
     all_G1_lengths = []
     all_S_lengths = []
     all_G2_lengths = []
