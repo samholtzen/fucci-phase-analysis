@@ -13,13 +13,13 @@ import scipy.signal as scisignal
 """
 
 
-
 def input_parser():
 
     """
     This function processes/parses commandline
     arguments and input parsed files.
     """
+
     parser = argp.ArgumentParser(description="Counter Function")
 
     # input argument "c" is configfile (string)
@@ -59,57 +59,84 @@ def input_parser():
     # Exception Handling of input errors
     if (counter_inputs.mVenusfilename and counter_inputs.mCherryfilename
        and counter_inputs.mediaframe):
+
         allcommands = True
         anycommands = True
+
     elif (counter_inputs.mVenusfilename or counter_inputs.mCherryfilename
          or counter_inputs.mediaframe):
+
         allcommands = False
         anycommands = True
+
     else:
+
         anycommands = False
-    # use command args if no config file but do have command args
+        # use command args if no config file but do have command args
+
     if counter_inputs.configfile is None:
+
         if allcommands:
+
             # convert parse arg ints from lists back into ints
             a = 1
+
         else:
+
             # Check for which value(s) is/are missing
             if counter_inputs.mCherryfilename is None:
+
                 raise AttributeError('There is no value for mCherry filename or \
                 config file')
             if counter_inputs.mVenusfilename is None:
+
                 raise AttributeError('There is no value for mVenus filename or \
                 config file')
+
             if counter_inputs.mediaframe is None:
                 raise AttributeError('There is no value for media frame or \
                 config file')
+
     # use config file instead
     elif counter_inputs.configfile:
+
         if anycommands is False:
+
             config = conp.ConfigParser()
             config.read(counter_inputs.configfile[0])
+
             # read in mCherry filename
             counter_inputs.mCherryfilename = config['FILES']['mCherry']
+
             # read in mVenus filename
             counter_inputs.mVenusfilename = config['FILES']['mVenus']
+
             # read in the media change frame
             counter_inputs.mediaframe = config['PARAMETERS']['media_change_frame']
+
         else:
+
             # Check for which value(s) were extras
             if counter_inputs.mCherryfilename:
+
                 raise AttributeError('Both a config file and mCherry filename \
                 were entered')
+
             if counter_inputs.mVenusfilename:
+
                 raise AttributeError('Both a config file and mVenus filename \
                 were entered')
+
             if counter_inputs.mediaframe:
+
                 raise AttributeError('Both a config file and media change frame \
                 were entered')
+
     return counter_inputs
 
 
-
 def file_reader(filename, delimiter=' '):
+
     """
     Returns list of each line made up of lists of values.
 
@@ -120,19 +147,26 @@ def file_reader(filename, delimiter=' '):
             Returns:
                     data_list(list of lists): List of values within each line.
     """
+
     # Exception Handling for opening invalid file
     try:
+
         # Open filename using open method
         with open(filename, newline='') as f_input:
             data = [list(map(float, row)) for row in csv.reader(f_input)]
             # print(data)
+
     except FileNotFoundError:
+
         print("FileNotFoundError: file does not exist.")
         # Exit code 1
         sys.exit(1)
+
     return data
 
+
 def get_derivative(data):
+
     """
     Returns list of each line made up of lists of values.
 
@@ -142,17 +176,23 @@ def get_derivative(data):
             Returns:
                     dervivative(list of arrays): Derivatives at each point in each cell line.
     """
+
     # Initialize
     derivative = []
+
     # loop through all cell lines
     for line in data:
+
         cellLineDiff = np.diff(line, 1)
         derivative.append(cellLineDiff)
+
     derivativeArray=np.array([np.array(xi) for xi in derivative])
+
     return derivativeArray
 
 def get_ratio(cherry, venus):
-    '''
+
+    """
     Returns list of each line made up of lists of values.
 
             Parameters:
@@ -161,24 +201,35 @@ def get_ratio(cherry, venus):
 
             Returns:
                     ratio(list of lists): List of ratios for each cell line.
-    '''
+    """
+
     # Initialize
     ratio = venus
+
     # loop through all cell lines
     for line in range(len(venus)):
+
         # Loop through each point in the cell lines
+
         for point in range(len(venus[1])):
+
             c = cherry[line][point]
             v = venus[line][point]
             # Take ratio of Cherry to Venus
             # Check that v is not zero
+
             if v == 0:
+
                 # if v is 0, return it to very small value
                 v = .00000001
+
             pointRatio = c/v
+
             # Add ratio value to main data file
             ratio[line][point] = pointRatio
+
     ratioArray=np.array([np.array(xi) for xi in ratio])
+
     return ratioArray
 
 def normalize_signals(data):
@@ -217,10 +268,7 @@ def mitosis_detection(current_venus):
     Returns: a list containing all mitosis events of a single track
 
     """
-    # Find a random track for testing this
-    # rand_track = random.randint(0, len(mVenus))
 
-    #
     norm_intensity = normalize_signals(current_venus)
 
     diff_intensity = np.diff(norm_intensity) * -1
@@ -397,19 +445,20 @@ def media_timing(cell_phases, media_frame):
 
 
 def get_daughter_stats(cell_phase_at_change, time_in_phase_at_change, all_G1_lengths, all_G2_lengths, all_S_lengths):
-    '''
+
+    """
     Purpose:
         To bin cells based on their fate and correlate this to their time in
         treatment media.
-        
-    
+
+
     Inputs:
         A list of strings with each element corresponding to the cell's phase
         at change
-        
-        A list of ints with each element corresponding to the cell's time 
+
+        A list of ints with each element corresponding to the cell's time
         spent in the phase
-        
+
         A list of lists containing how long each cell spends in the daughter
         cell G1s
 
@@ -421,8 +470,8 @@ def get_daughter_stats(cell_phase_at_change, time_in_phase_at_change, all_G1_len
         column 3 is how long the daughter G1 is
         column 4 is how long the daughter S is
         column 5 is how long the daughter G2 is
-        
-    '''
+
+    """
     
     daughter_cell_stats = []
     
@@ -440,8 +489,7 @@ def get_daughter_stats(cell_phase_at_change, time_in_phase_at_change, all_G1_len
                 G1_temp = all_G1_lengths[i][1]
             else:
                 G1_temp = all_G1_lengths[i][0]
-                    
-            
+
         elif phase_temp == 'S':
             
             G1_temp = all_G1_lengths[i][0]
@@ -478,13 +526,6 @@ def write_list_csv(daughter_cell_stats):
                                                    'Daughter_G2'])
     
     daughter_cell_stats_df.to_csv('daughter_cell_phases.csv',index=False, header=True)
-    
-    
+
     return None
 
-
-#Testing Scripts
-#print(file_reader("mCherry_sample_test.csv"))
-#file_reader("mVenus_sample_test.csv")
-#print(get_derivative([[1,2,3,4,5],[1,3,5,7,9],[1,4,7,10,13]]))
-#print(get_ratio([[1,2,3,4,5],[1,1,1,1,1]],[[1,2,3,4,5],[0,1,2,3,4]]))
