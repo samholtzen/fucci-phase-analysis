@@ -295,39 +295,103 @@ def assign_phase_to_frame(mCherry, mVenus):
             'M' - corresponding to when a cell is in Mitosis
 
     """
-    phase_string_array = []
+    track_phases = []
 
-    for track in range(len(mCherry)):
+    cherry_norm = normalize_signals(mCherry)
+    venus_norm = normalize_signals(mVenus)
+    mitoses = mitosis_detection(mVenus)
 
-        track_phases = []
+    cherry_on = cherry_norm > 0.05
+    venus_on = venus_norm > 0.05
 
-        cherry_norm = normalize_signals(mCherry[track])
-        venus_norm = normalize_signals(mVenus[track])
-        mitoses = mitosis_detection(mVenus[track])
+    for frame in range(len(cherry_on)):
 
-        cherry_on = cherry_norm > 0.1
-        venus_on = venus_norm > 0.1
+        if frame in mitoses:
+            track_phases.append('M')
 
-        for frame in range(len(cherry_on)):
+        elif cherry_on[frame] and venus_on[frame]:
+            track_phases.append('G2')
 
-            if frame in mitoses:
-                track_phases.append('M')
+        elif cherry_on[frame] and not venus_on[frame]:
+            track_phases.append('G1')
 
-            elif cherry_on[frame] and venus_on[frame]:
-                track_phases.append('G2')
+        elif venus_on[frame] and not cherry_on[frame]:
+            track_phases.append('S')
 
-            elif cherry_on[frame] and not venus_on[frame]:
-                track_phases.append('G1')
+        else:
+            track_phases.append('NA')
 
-            elif venus_on[frame] and not cherry_on[frame]:
-                track_phases.append('S')
+    return track_phases
+
+
+def phase_assigner_cleanup(track_phases):
+
+    """
+    Uses cell cycle progression order to clean up data from assign_phase_to_frame.
+    The method used in this is noisy and sometimes out of sort phases to frames
+
+    Args:
+        track_phases: A list containing the rough phase assignments for
+        a cell track.
+
+    Returns:
+        track_phases_clean: a string list that contains cleaned cell cycle phases
+
+    """
+    track_phases_clean = []
+
+    num_frames = len(track_phases)
+    counter = 0
+
+    while counter < num_frames-1:
+
+        current_phase = track_phases[counter]
+        next_phase = track_phases[counter + 1]
+
+        if current_phase == 'NA':
+            current_phase = 'G1'
+            logical_next = 'S'
+
+        if current_phase == 'M':
+            logical_next = 'G1'
+
+        elif current_phase == 'G1':
+            logical_next = 'S'
+
+        elif current_phase == 'S':
+            logical_next = 'G2'
+
+        elif current_phase == 'G2':
+            logical_next = 'M'
+
+        while next_phase != logical_next:
+
+            if current_phase == 'M':
+                track_phases_clean.append('M')
+                current_phase = 'G1'
+                counter += 1
+                if counter == num_frames - 1:
+                    break
+                next_phase = track_phases[counter]
+
+            elif current_phase == 'G2' and next_phase == 'G1':
+                track_phases_clean.append('M')
+                current_phase = 'G1'
+                logical_next = 'G1'
+                counter += 1
+                if counter == num_frames - 1:
+                    break
+                next_phase = track_phases[counter]
 
             else:
-                track_phases.append('NA')
+                track_phases_clean.append(current_phase)
+                counter += 1
+                if counter == num_frames - 1:
+                    break
+                next_phase = track_phases[counter]
 
-    phase_string_array.append(track_phases)
-
-    return phase_string_array
+        counter += 1
+    return track_phases_clean
 
 
 def count_phase_frames(cell_phases, media_frame):
@@ -358,7 +422,6 @@ def count_phase_frames(cell_phases, media_frame):
     all_G2_lengths = []
     
     for cell in cell_phases:
-        
         # Convert the numpy array to one long string
         cellstr_temp = ''.join(cell)
 
