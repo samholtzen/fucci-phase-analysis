@@ -1,10 +1,16 @@
 import csv
 import sys
+import random
 import numpy as np
+import plotly.graph_objects as go
 import pandas as pd
 import argparse as argp
 import configparser as conp
 import scipy.signal as scisignal
+from hmmlearn import hmm
+
+import utils
+
 """
     utils provides definitions to take in file,
     turn it into a list of lists, determine phases
@@ -30,7 +36,8 @@ def input_parser():
         nargs=1,
         action='store',
         required=False,
-        help='This is a optional configfile')
+        help='This is a optional configfile'
+    )
     
     # input argument "a" is mCherry filename (string)
     parser.add_argument(
@@ -38,7 +45,8 @@ def input_parser():
         type=str,
         action='store',
         required=False,
-        help='This string here is the mCherry data filename')
+        help='This string here is the mCherry data filename'
+    )
     
     # input argument "b" is mVenus filename (string)
     parser.add_argument(
@@ -46,14 +54,16 @@ def input_parser():
         type=str,
         action='store',
         required=False,
-        help='This string here is the mVenus data filename')
+        help='This string here is the mVenus data filename'
+    )
     
     parser.add_argument(
         '-t', '--mediaframe',
         type=int,
         action='store',
         required=False,
-        help='The frame at which the media was changed goes here')
+        help='The frame at which the media was changed goes here'
+    )
     
     counter_inputs = parser.parse_args()
     # Exception Handling of input errors
@@ -280,119 +290,6 @@ def mitosis_detection(current_venus):
     return mitoses
 
 
-def assign_phase_to_frame(mCherry, mVenus):
-    """
-
-    Args:
-        mCherry: list of lists containing fluorescence intensity values mCherry
-        mVenus: list of lists containing fluorescence intensity values mVenus
-
-    Returns:
-        phase_string_array: numpy string array containing the following --
-            'S' - corresponding to when a cell is in S-phase
-            'G1' - corresponding to when a cell is in G1-phase
-            'G2' - corresponding to when a cell is in G2-Phase
-            'M' - corresponding to when a cell is in Mitosis
-
-    """
-    track_phases = []
-
-    cherry_norm = normalize_signals(mCherry)
-    venus_norm = normalize_signals(mVenus)
-    mitoses = mitosis_detection(mVenus)
-
-    cherry_on = cherry_norm > 0.05
-    venus_on = venus_norm > 0.05
-
-    for frame in range(len(cherry_on)):
-
-        if frame in mitoses:
-            track_phases.append('M')
-
-        elif cherry_on[frame] and venus_on[frame]:
-            track_phases.append('G2')
-
-        elif cherry_on[frame] and not venus_on[frame]:
-            track_phases.append('G1')
-
-        elif venus_on[frame] and not cherry_on[frame]:
-            track_phases.append('S')
-
-        else:
-            track_phases.append('NA')
-
-    return track_phases
-
-
-def phase_assigner_cleanup(track_phases):
-
-    """
-    Uses cell cycle progression order to clean up data from assign_phase_to_frame.
-    The method used in this is noisy and sometimes out of sort phases to frames
-
-    Args:
-        track_phases: A list containing the rough phase assignments for
-        a cell track.
-
-    Returns:
-        track_phases_clean: a string list that contains cleaned cell cycle phases
-
-    """
-    track_phases_clean = []
-
-    num_frames = len(track_phases)
-    counter = 0
-
-    while counter < num_frames-1:
-
-        current_phase = track_phases[counter]
-        next_phase = track_phases[counter + 1]
-
-        if current_phase == 'NA':
-            current_phase = 'G1'
-            logical_next = 'S'
-
-        if current_phase == 'M':
-            logical_next = 'G1'
-
-        elif current_phase == 'G1':
-            logical_next = 'S'
-
-        elif current_phase == 'S':
-            logical_next = 'G2'
-
-        elif current_phase == 'G2':
-            logical_next = 'M'
-
-        while next_phase != logical_next:
-
-            if current_phase == 'M':
-                track_phases_clean.append('M')
-                current_phase = 'G1'
-                counter += 1
-                if counter == num_frames - 1:
-                    break
-                next_phase = track_phases[counter]
-
-            elif current_phase == 'G2' and next_phase == 'G1':
-                track_phases_clean.append('M')
-                current_phase = 'G1'
-                logical_next = 'G1'
-                counter += 1
-                if counter == num_frames - 1:
-                    break
-                next_phase = track_phases[counter]
-
-            else:
-                track_phases_clean.append(current_phase)
-                counter += 1
-                if counter == num_frames - 1:
-                    break
-                next_phase = track_phases[counter]
-
-        counter += 1
-    return track_phases_clean
-
 
 def count_phase_frames(cell_phases, media_frame):
 
@@ -579,7 +476,38 @@ def get_daughter_stats(cell_phase_at_change, time_in_phase_at_change, all_G1_len
         
     return daughter_cell_stats
 
+def assign_phase_to_frame(mCherry, mVenus):
 
+    phases = []
+
+    cherry_norm = utils.normalize_signals(mCherry)
+    venus_norm = utils.normalize_signals(mVenus)
+
+    mitoses = utils.mitosis_detection(venus_norm)
+
+    cherry_on = cherry_norm > 0.05
+    venus_on = venus_norm > 0.05
+
+    for frame in range(len(cherry_norm)):
+
+        if frame in mitoses:
+            phases.append('M')
+
+        if cherry_on[frame] and not venus_on[frame]:
+            phases.append('G1')
+
+        elif venus_on[frame] and not cherry_on[frame]:
+            phases.append('S')
+
+        elif venus_on[frame] and cherry_on[frame]:
+            phases.append('G2')
+
+        elif not venus_on[frame] and not cherry_on[frame]:
+            phases.append('NA')
+
+
+
+    return phases
 
 def write_list_csv(daughter_cell_stats):
     
@@ -592,3 +520,141 @@ def write_list_csv(daughter_cell_stats):
 
     return None
 
+
+def plotting_tracks(mVenus, mCherry, track_ids, random_tracks, if_random=False, if_save=False):
+    """
+
+    Args:
+        mVenus: A list of lists containing rows corresponding to fluorescence intensities of
+        single cells over time
+        mCherry: A list of lists containing rows corresponding to fluorescence intensities of
+        single cells over time
+        track_ids: A list containing single cells within the numpy array to plot.
+        Must be within [0, len(mVenus or mCherry))
+        random_tracks: The number of random tracks you want to plot
+        if_random: Boolean True or False to randomize the tracks you want to plot.
+        if_save: Boolean True or False to save the images as .png files
+
+    Returns: Graphs in browser or in working directory
+
+    """
+
+    num_of_tracks = len(track_ids)
+    num_of_frames = len(mVenus)
+    frame_vec = [x for x in range(num_of_frames)]
+
+    if any(track_id > num_of_frames for track_id in track_ids):
+        raise IndexError
+
+    if if_random:
+        tracks = [random.randrange(0, num_of_frames, 1) for track in range(random_tracks)]
+    else:
+        tracks = track_ids
+
+    venus_norm = [utils.normalize_signals(mVenus[track]) for track in tracks]
+    cherry_norm = [utils.normalize_signals(mCherry[track]) for track in tracks]
+    mitoses_for_plotting = [utils.mitosis_detection(mVenus[track]) for track in tracks]
+    print(mitoses_for_plotting)
+    fig = go.Figure()
+    counter = 0
+
+    for track in range(num_of_tracks):
+
+        venus_at_mitosis = [venus_norm[track][mitosis] for mitosis in mitoses_for_plotting[counter]]
+
+        fig.add_trace(go.Scatter(x=frame_vec,
+                                 y=venus_norm[track],
+                                 mode='lines',
+                                 name=f'mVenus for Cell {track}',
+                                 line=dict(color='rgba(153, 255, 51, .8)')))
+
+        fig.add_trace(go.Scatter(x=mitoses_for_plotting,
+                                 y=venus_at_mitosis,
+                                 mode='markers',
+                                 name=f'Mitoses for {track}'))
+
+        fig.add_trace(go.Scatter(x=frame_vec,
+                                 y=cherry_norm[track],
+                                 mode='lines',
+                                 name=f'mCherry for Cell {track}',
+                                 line=dict(color='rgba(152, 0, 0, .8)')))
+        counter += 1
+
+
+    fig.show()
+
+    if if_save:
+        asdfskldjf
+
+    return None
+
+
+def split_by_mitosis(mCherry, mVenus):
+    """
+    Splits a list of integers by certain indices that correspond to the mitosis events
+
+    Args:
+        mCherry: A list of mCherry values for a particular track
+        mVenus:  A list of mVenus values for a particular track
+
+    Returns:
+        split_cherry: a list of lists with each element corresponding to mCherry intensity
+        of a single cell
+
+        split_venus: a list of lists with each element corresponding to mVenus intensity
+        of a single cell
+
+    """
+    split_cherry = []
+    split_venus = []
+    mitoses = utils.mitosis_detection(mVenus)
+
+    # process of doing this involves using the mitosis events to split the venus and cherry signals into
+    # their single cell tracks, to then normalize, assign phases, and put back together.
+    current_mitosis = 0
+
+    for mitosis in mitoses:
+
+        split_cherry_temp = mCherry[current_mitosis:mitosis]
+        split_venus_temp = mVenus[current_mitosis:mitosis]
+
+        print(len(split_cherry_temp))
+        current_mitosis = current_mitosis + mitosis
+
+        split_cherry.append(split_cherry_temp)
+        split_venus.append(split_venus_temp)
+
+    split_cherry_temp = mCherry[current_mitosis:-1]
+    split_venus_temp = mVenus[current_mitosis:-1]
+    print(len(split_cherry_temp))
+    split_cherry.append(split_cherry_temp)
+    split_venus.append(split_venus_temp)
+
+    return split_cherry, split_venus
+
+
+def clean_phase_assignment(split_cherry, split_venus):
+    """
+
+    Args:
+        split_cherry: A list of lists, with each element containing a cell's fluorescence intensity
+        over time. The track is split at mitosis events, which we can glue back together into one array
+
+        split_venus: Same as split_cherry, but for venus intensity
+
+    Returns: A list containing strings that correspond to its cell cycle phase at that frame
+
+    """
+
+    track_phases = []
+
+    for cell in range(split_cherry):
+
+        curr_cell_cherry = utils.normalize_signals(split_cherry(cell))
+        curr_cell_venus = utils.normalize_signals(split_venus(cell))
+
+        frame = 0
+
+
+
+    return track_phases

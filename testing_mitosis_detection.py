@@ -14,12 +14,11 @@ cherry_norm = utils.normalize_signals(mCherry[track])
 mitoses = utils.mitosis_detection(mVenus[track])
 
 phases = utils.assign_phase_to_frame(cherry_norm, venus_norm)
-phases_clean = utils.phase_assigner_cleanup(phases)
 
 print(phases)
 ph_num_clean = []
 
-for frame in phases_clean:
+for frame in phases:
     if frame == 'G1':
         ph_num_clean.append(0.2)
     elif frame == 'S':
@@ -45,14 +44,17 @@ fig.add_trace(go.Scatter(x=frames,
                          y=venus_norm,
                          mode='lines',
                          name='normalized mVenus'))
+
 fig.add_trace(go.Scatter(x=mitoses,
                          y=venus_at_mitosis,
                          mode='markers',
                          name='Mitoses'))
+
 fig.add_trace(go.Scatter(x=frames,
                          y=cherry_norm,
                          mode='lines',
                          name='normalized mCherry'))
+
 fig.add_trace(go.Scatter(x=frames,
                          y=ph_num_clean,
                          mode='markers',
