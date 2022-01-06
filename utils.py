@@ -7,8 +7,9 @@ import pandas as pd
 import argparse as argp
 import configparser as conp
 import scipy.signal as scisignal
-from hmmlearn import hmm
-
+from sklearn.svm import SVC
+from sklearn.model_selection import train_test_split
+import matplotlib.pyplot as plt
 import utils
 
 """
@@ -289,27 +290,54 @@ def mitosis_detection(current_venus):
 
     return mitoses
 
+def intensity_filtering(mCherry, mVenus, int_thresh=50):
 
+    """
+    The purpose of this function is to filter out non-expressing or low-expressing cells from the array
+    The default threshold for the intensity cutoff is 50, but this can be increased or decreased as needed
+
+    Args:
+        int_thresh: the threshold for intensity values
+        mCherry: array of intensities over time for all tracks
+        mVenus: array of intensities over time for all tracks
+
+    Returns:
+
+    """
+    filt_mCherry = []
+    filt_mVenus = []
+
+    for track in range(len(mCherry)):
+
+        max_cherry = max(mCherry[track])
+        max_venus = max(mVenus[track])
+
+        if max_cherry > int_thresh and max_venus > int_thresh:
+            filt_mCherry.append(mCherry[track])
+            filt_mVenus.append(mVenus[track])
+
+
+    return filt_mCherry, filt_mVenus
 
 def count_phase_frames(cell_phases, media_frame):
 
     """
     Purpose:
-        To count the number of frames a cell spends in each phase after
+        To count the number of frames a cell spends in each phase_training after
         changing the media.
 
 
     Inputs:
         A numpy character array containing rows corresponding to single cell traces
         with each column representing a frame, and each element containing
-        a cell's cell cycle phase at that particular frame
+        a cell's cell cycle phase_training at that particular frame
 
         An integer representing frame at which the media was changed on
         these cells
 
 
     Outputs:
-        Three lists of lists, containing the time spent in each phase in the
+        Three lists of lists, containing the time spent in each phase_training in the
         sublist, with each element in the larger list corresponding to the
         tracks
     """
@@ -356,21 +384,21 @@ def media_timing(cell_phases, media_frame):
 
     """
     Purpose:
-        To determine at what point in a cell cycle phase a cell was in old
+        To determine at what point in a cell cycle phase_training a cell was in old
         media before being changed to the new one
 
 
     Inputs:
         A numpy character array containing rows corresponding to single cell traces
         with each column representing a frame, and each element containing
-        a cell's cell cycle phase at that particular frame
+        a cell's cell cycle phase_training at that particular frame
 
         An int corresponding to the frame at which the media was changed
 
 
     Outputs:
-        Two lists of lists, first containing the phase at which the
-        media was changed, the second containing how long it was in that phase
+        Two lists of lists, first containing the phase_training at which the
+        media was changed, the second containing how long it was in that phase_training
         before the media was changed
 
     """
@@ -413,11 +441,11 @@ def get_daughter_stats(cell_phase_at_change, time_in_phase_at_change, all_G1_len
 
 
     Inputs:
-        A list of strings with each element corresponding to the cell's phase
+        A list of strings with each element corresponding to the cell's phase_training
         at change
 
         A list of ints with each element corresponding to the cell's time
-        spent in the phase
+        spent in the phase_training
 
         A list of lists containing how long each cell spends in the daughter
         cell G1s
@@ -425,8 +453,8 @@ def get_daughter_stats(cell_phase_at_change, time_in_phase_at_change, all_G1_len
 
     Outputs:
         Returning an n x 3 array, with each row corresponding to a cell
-        column 1 is the phase of the cell at media change
-        column 2 is frames into the phase the cell was before media change
+        column 1 is the phase_training of the cell at media change
+        column 2 is frames into the phase_training the cell was before media change
         column 3 is how long the daughter G1 is
         column 4 is how long the daughter S is
         column 5 is how long the daughter G2 is
@@ -476,36 +504,92 @@ def get_daughter_stats(cell_phase_at_change, time_in_phase_at_change, all_G1_len
         
     return daughter_cell_stats
 
-def assign_phase_to_frame(mCherry, mVenus):
+def build_svm(cherry_training, venus_training, training_labels):
 
-    phases = []
+    '''
 
-    cherry_norm = utils.normalize_signals(mCherry)
-    venus_norm = utils.normalize_signals(mVenus)
+    Args:
+        cherry_training: a list of mCherry intensity values
+        venus_training: a list of mVenus intensity values
+        training_labels:
 
-    mitoses = utils.mitosis_detection(venus_norm)
+    Returns:
+        model: a SVC object containing a trained support-vector model
 
-    cherry_on = cherry_norm > 0.05
-    venus_on = venus_norm > 0.05
+    '''
 
-    for frame in range(len(cherry_norm)):
+    cherry_norm = utils.normalize_signals(cherry_training)
+    venus_norm = utils.normalize_signals(venus_training)
 
-        if frame in mitoses:
-            phases.append('M')
+    zipped_training = list(zip(cherry_norm, venus_norm))
 
-        if cherry_on[frame] and not venus_on[frame]:
-            phases.append('G1')
-
-        elif venus_on[frame] and not cherry_on[frame]:
-            phases.append('S')
-
-        elif venus_on[frame] and cherry_on[frame]:
-            phases.append('G2')
-
-        elif not venus_on[frame] and not cherry_on[frame]:
-            phases.append('NA')
+    model = SVC(C = 6, kernel = 'rbf', gamma = 9)
+    model.fit(zipped_training, training_labels)
 
 
+    return model
+
+
+def svm_rough_guess(cherry, venus, model):
+
+    zipped_test = list(zip(cherry,venus))
+    predictions = model.predict(zipped_test)
+
+    return predictions
+
+def assign_phase_to_frame(cherry, venus, predictions):
+
+    '''
+
+    Args:
+        cherry: list of mCherry intensity values normalized to 0-1
+        venus:  list of mVenus intensity values normalized to 0-1
+        predictions: list of predictions made by trained SVM algorithm
+
+    Returns: phases that have been corrected using unidirectional cell cycle
+
+    '''
+
+
+
+    phases = predictions
+    # get mitosis events
+    mitoses = utils.mitosis_detection(venus)
+
+    # First, update mitosis frames with a "4", regardless of phase
+    for mitosis in mitoses:
+        phases[mitosis] = 4
+
+    # starting at index 0, cycle through and update cell cycle phase if it's not in logical order
+    for frame in range(len(predictions)):
+
+        if frame != len(predictions)-1:
+
+            current_phase = phases[frame]
+            next_phase = phases[frame+1]
+
+            if current_phase == 4:
+                # The SVM algorithm sometimes calls G0 as S-phase directly after mitosis, we can correct this:
+                # if the phase is "mitosis", then the first 5 frames WILL be G1/G0, so this assumption is valid
+
+               phases[frame+1:frame+4] = 0
+
+            elif next_phase == current_phase or next_phase == current_phase + 1:
+                # if the next phase is the same as the current phase, OR the next phase is the logical next phase,
+                # and the current phase isn't mitosis, it is correct, and we can pass
+                pass
+
+            elif next_phase == 4:
+                # if the next phase is mitosis, this is correct, so we pass
+                pass
+
+            else:
+                # if the other criteria are not met, we need to change this to the correct phase.
+                # Set it equal to the current phase
+                phases[frame+1] = current_phase
+
+        else:
+            pass
 
     return phases
 
@@ -589,7 +673,7 @@ def plotting_tracks(mVenus, mCherry, track_ids, random_tracks, if_random=False, 
     return None
 
 
-def split_by_mitosis(mCherry, mVenus):
+def split_by_mitosis(mCherry, mVenus, mitoses):
     """
     Splits a list of integers by certain indices that correspond to the mitosis events
 
@@ -607,9 +691,8 @@ def split_by_mitosis(mCherry, mVenus):
     """
     split_cherry = []
     split_venus = []
-    mitoses = utils.mitosis_detection(mVenus)
 
-    # process of doing this involves using the mitosis events to split the venus and cherry signals into
+    # process of doing this involves using the mitosis events to split the venus_training and cherry_training signals into
     # their single cell tracks, to then normalize, assign phases, and put back together.
     current_mitosis = 0
 
@@ -618,43 +701,16 @@ def split_by_mitosis(mCherry, mVenus):
         split_cherry_temp = mCherry[current_mitosis:mitosis]
         split_venus_temp = mVenus[current_mitosis:mitosis]
 
-        print(len(split_cherry_temp))
-        current_mitosis = current_mitosis + mitosis
+        current_mitosis += mitosis
 
         split_cherry.append(split_cherry_temp)
         split_venus.append(split_venus_temp)
 
     split_cherry_temp = mCherry[current_mitosis:-1]
     split_venus_temp = mVenus[current_mitosis:-1]
-    print(len(split_cherry_temp))
+
     split_cherry.append(split_cherry_temp)
     split_venus.append(split_venus_temp)
 
     return split_cherry, split_venus
 
-
-def clean_phase_assignment(split_cherry, split_venus):
-    """
-
-    Args:
-        split_cherry: A list of lists, with each element containing a cell's fluorescence intensity
-        over time. The track is split at mitosis events, which we can glue back together into one array
-
-        split_venus: Same as split_cherry, but for venus intensity
-
-    Returns: A list containing strings that correspond to its cell cycle phase at that frame
-
-    """
-
-    track_phases = []
-
-    for cell in range(split_cherry):
-
-        curr_cell_cherry = utils.normalize_signals(split_cherry(cell))
-        curr_cell_venus = utils.normalize_signals(split_venus(cell))
-
-        frame = 0
-
-
-
-    return track_phases

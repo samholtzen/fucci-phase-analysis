@@ -6,7 +6,6 @@ import matplotlib.pyplot as plt
 import csv
 import pandas as pd
 
-fig, ax = plt.subplots()
 
 def make_meshgrid(ax, h=.02):
     # x_min, x_max = x.min() - 1, x.max() + 1
@@ -93,38 +92,43 @@ fucci_svm = SVC(C=6,
                 kernel='rbf',
                 gamma=9)
 fucci_svm.fit(zip_train, phase_train)
-
+print(fucci_svm.score(zip_test, phase_test))
 # Plot the mCherry vs. mVenus values using the phases as the color
-scatter = ax.scatter(cherry_train, venus_train, c=phase_train)
-legend1 = ax.legend(*scatter.legend_elements(),
-                    loc="upper right", title="Classes")
-ax.add_artist(legend1)
-plt.xlabel('mCherry Intensity (normalized)')
-plt.ylabel('mCherry Intensity (normalized)')
-plt.title('FUCCI Phase Assignment using Support Vector Machine')
-
-# Draw boundaries using functions defined above
-draw_boundary(ax, fucci_svm)
+# fig, ax = plt.subplots()
+# scatter = ax.scatter(cherry_train, venus_train, c=phase_train)
+# legend1 = ax.legend(*scatter.legend_elements(),
+#                     loc="upper right", title="Classes")
+# ax.add_artist(legend1)
+# plt.xlabel('mCherry Intensity (normalized)')
+# plt.ylabel('mCherry Intensity (normalized)')
+# plt.title('FUCCI Phase Assignment using Support Vector Machine')
+#
+# # Draw boundaries using functions defined above
+# draw_boundary(ax, fucci_svm)
 
 # Trying the model on actual data
-
+track_interest = 130
 cherry = utils.file_reader('mCherry_all_data.csv')
 venus = utils.file_reader('mVenus_all_data.csv')
 
-current_cherry = utils.normalize_signals(cherry[100])
-current_venus = utils.normalize_signals(venus[100])
+cherry,venus = utils.intensity_filtering(cherry,venus)
+
+current_cherry = utils.normalize_signals(cherry[track_interest])
+current_venus = utils.normalize_signals(venus[track_interest])
 
 current_zip = list(zip(current_cherry, current_venus))
 prediction = fucci_svm.predict(current_zip)
 
-fig,ax = plt.subplots()
+fig,ax2 = plt.subplots()
 
 prediction = utils.assign_phase_to_frame(current_cherry,current_venus,prediction)
 
 
-ax.scatter(range(len(current_cherry)), current_cherry)
-ax.scatter(range(len(current_cherry)), prediction*0.2)
-
+ax2.scatter(range(len(current_cherry)), current_cherry)
+ax2.scatter(range(len(current_cherry)), prediction*0.2, c=prediction)
+plt.xlabel('Time (frames)')
+plt.ylabel('Reporter Intensity (normalized)')
+plt.title('Phase Assignments After Model')
 plt.show()
 
 # convert predictions to strings
@@ -139,3 +143,4 @@ for frame in prediction:
     elif frame == 4:
         phases.append('M')
 
+# Now that we have phases assigned robustly, we can probe the % quiescent after zinc withdrawal
