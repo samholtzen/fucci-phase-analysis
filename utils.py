@@ -714,3 +714,27 @@ def split_by_mitosis(mCherry, mVenus, mitoses):
 
     return split_cherry, split_venus
 
+def convert_pred_to_phase(prediction):
+
+    '''
+
+    Args:
+        prediction: prediction output from the SVM
+
+    Returns:
+        phases: a list of list, with each entry being one cell's phase at that frame
+
+    '''
+
+    phases = []
+    for frame in prediction:
+        if frame == 0:
+            phases.append('G1')
+        elif frame == 1:
+            phases.append('S')
+        elif frame == 2:
+            phases.append('G2')
+        elif frame == 4:
+            phases.append('M')
+
+    return phases
